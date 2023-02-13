@@ -5,8 +5,8 @@ using UnityEngine;
 public class PlayerCamera : MonoBehaviour
 {
     [Header("Setup")]
-    public GameObject positionPivot;
-    public GameObject rotationPivot;
+    public GameObject cameraTarget;
+    public GameObject cameraPosition;
 
     [Header("Standard Behaviour")]
     public float positionLerp = 0.5f;
@@ -20,12 +20,16 @@ public class PlayerCamera : MonoBehaviour
     private float rotatedY;
 
     [Header("Focus Behaviour")]
-    public float lockOnRange = 100f;
-    public Vector3 lockedOffset;
+    public float focusRange = 100f;
+    public Vector3 focusOffset;
     public LayerMask layerMask;
+    public GameObject currentTarget;
 
-    private bool lockedCamera;
-    private GameObject currentTarget;
+    private bool focusActive;
+    public bool FocusActive
+    {
+        get { return focusActive;}
+    }
 
     // Common variables
 
@@ -34,13 +38,13 @@ public class PlayerCamera : MonoBehaviour
 
     private void Start()
     {
-        transform.position = positionPivot.transform.position;
-        transform.LookAt(rotationPivot.transform);
+        transform.position = cameraPosition.transform.position;
+        transform.LookAt(cameraTarget.transform);
 
         rotatedX = 0;
         rotatedY = 0;
         currentOffset = Vector3.zero;
-        lockedCamera = false;
+        focusActive = false;
     }
 
     private void Update()
@@ -49,75 +53,69 @@ public class PlayerCamera : MonoBehaviour
 
         if (Input.GetButtonDown("LockCamera"))
         {
-            lockedCamera = !lockedCamera;
-            LockClosestTarget(rotationPivot.transform, lockOnRange);
+            focusActive = !focusActive;
+            LockClosestTarget(cameraTarget.transform, focusRange);
         }
 
         transform.position = Vector3.Lerp(
-            transform.position, 
-            positionPivot.transform.position + currentOffset, 
+            transform.position,
+            cameraPosition.transform.position + currentOffset,
             positionLerp * Time.deltaTime);
 
-        if (lockedCamera)
+        if (focusActive)
         {
-            LockOnRotation();
+            FocusBehaviour();
         }
         else
         {
-            LockOffRotation();
+            StandardBehaviour();
         }
     }
 
-    private void LockOnRotation()
+    private void FocusBehaviour()
     {
         // Change target while locked
 
         if (Input.GetButtonDown("LockSwap"))
         {
-            LockClosestTarget(rotationPivot.transform, lockOnRange);
+            LockClosestTarget(cameraPosition.transform, focusRange);
         }
 
-        // Computing target locked offset
+        // Computing focus camera offset
 
-        Vector3 xComponent = positionPivot.transform.right * lockedOffset.x;
-        Vector3 yComponent = positionPivot.transform.up * lockedOffset.y;
-        Vector3 zComponent = positionPivot.transform.forward * lockedOffset.z;
+        Vector3 xComponent = cameraPosition.transform.right * focusOffset.x;
+        Vector3 yComponent = cameraPosition.transform.up * focusOffset.y;
+        Vector3 zComponent = cameraPosition.transform.forward * focusOffset.z;
         currentOffset = xComponent + yComponent + zComponent;
-
-        // Setting locked off rotation for correct mode swap translation
-
-        rotatedX = rotationPivot.transform.localEulerAngles.y;
-        rotatedY = rotationPivot.transform.localEulerAngles.x;
 
         // Look at focused enemy to focus
 
         Transform target = currentTarget.transform;
 
         Vector3 lookTarget = new Vector3(
-            (target.position.x + rotationPivot.transform.position.x) / 2,
-            (target.position.y + rotationPivot.transform.position.y) / 2,
-            (target.position.z + rotationPivot.transform.position.z) / 2);
+            (target.position.x + cameraPosition.transform.position.x) / 2,
+            (target.position.y + cameraPosition.transform.position.y) / 2,
+            (target.position.z + cameraPosition.transform.position.z) / 2);
 
-        rotationPivot.transform.LookAt(lookTarget);
-
+        cameraTarget.transform.LookAt(lookTarget);
         Quaternion targetRotation = Quaternion.LookRotation(lookTarget - transform.position);
         transform.rotation = Quaternion.Slerp(transform.rotation, targetRotation, rotationLerp * Time.deltaTime);
     }
 
 
-    private void LockOffRotation()
+    private void StandardBehaviour()
     {
         // Computing standard camera offset
 
-        Vector3 xComponent = positionPivot.transform.right * standardOffset.x;
-        Vector3 yComponent = positionPivot.transform.up * standardOffset.y;
-        Vector3 zComponent = positionPivot.transform.forward * standardOffset.z;
+        Vector3 xComponent = cameraPosition.transform.right * standardOffset.x;
+        Vector3 yComponent = cameraPosition.transform.up * standardOffset.y;
+        Vector3 zComponent = cameraPosition.transform.forward * standardOffset.z;
         currentOffset = xComponent + yComponent + zComponent;
 
         // Computing rotation angles
 
-        float rotX = Input.GetAxis("Mouse X") * sensitivity * sensitivity * Time.deltaTime;
-        float rotY = Input.GetAxis("Mouse Y") * sensitivity * sensitivity * Time.deltaTime;
+        float rotX = Input.GetAxis("Mouse X") * sensitivity * Time.deltaTime;
+        float rotY = Input.GetAxis("Mouse Y") * sensitivity * Time.deltaTime;
         rotatedX += rotX;
         rotatedY -= rotY;
         rotatedX %= 360;
@@ -130,8 +128,9 @@ public class PlayerCamera : MonoBehaviour
         if (rotatedY < minAngle)
             rotatedY = minAngle;
 
-        rotationPivot.transform.localRotation = Quaternion.Euler(rotatedY, rotatedX, 0f);
-        transform.LookAt(rotationPivot.transform);
+        cameraTarget.transform.rotation = Quaternion.Euler(rotatedY, rotatedX, 0f);
+
+        transform.LookAt(cameraTarget.transform);
     }
 
     // Functions that searches for the closest target in a given range from a given position to set in "currentTarget"
@@ -153,10 +152,5 @@ public class PlayerCamera : MonoBehaviour
         }
 
         currentTarget = bestMatch;
-    }
-
-    public bool IsLocked()
-    {
-        return lockedCamera;
     }
 }

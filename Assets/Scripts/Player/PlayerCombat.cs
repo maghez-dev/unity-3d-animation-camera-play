@@ -58,7 +58,7 @@ public class PlayerCombat : MonoBehaviour
 
     public void AttackBegin()
     {
-        playerMovement.canMove = false;
+        playerInputManager.canMove = false;
         canAttack = false;
 
         playerAnimator.SetInteger("AttackIdx", attackIdx);
@@ -74,7 +74,7 @@ public class PlayerCombat : MonoBehaviour
     public void AttackEnd()
     {
         attackIdx = 0;
-        playerMovement.canMove = true;
+        playerInputManager.canMove = true;
     }
 
 

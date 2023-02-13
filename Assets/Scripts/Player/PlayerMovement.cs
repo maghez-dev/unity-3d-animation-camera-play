@@ -7,10 +7,8 @@ public class PlayerMovement : MonoBehaviour
 {
     [Header("Movement")]
     public PlayerCamera playerCamera;
-    public GameObject model;
     public float rotationSpeed = 5f;
     public float moveSpeed = 5f;
-    public bool canMove = true;
 
     [Header("Rolling")]
     public float rollingTimeout = 5f;
@@ -24,10 +22,8 @@ public class PlayerMovement : MonoBehaviour
     private Vector3 targetDirection;
     private Quaternion targetRotation;
     private float accelleration = 0f;
-    private float currentSpeed;
     private float movementX;
     private float movementZ;
-    private float colliderHeight;
 
     private bool strafe;
     public bool Strafe
@@ -44,8 +40,6 @@ public class PlayerMovement : MonoBehaviour
         animator = GetComponent<Animator>();
         rb = GetComponent<Rigidbody>();
 
-        currentSpeed = moveSpeed;
-        colliderHeight = capsuleCollider.height;
         targetRotation = transform.rotation;
         targetDirection = transform.forward;
         strafe = false;
@@ -53,31 +47,31 @@ public class PlayerMovement : MonoBehaviour
 
     void Update()
     {
-        strafe = playerCamera.IsLocked();
+        strafe = playerCamera.FocusActive;
 
         MovementXZ();
     }
 
     private void FixedUpdate()
     {
-        model.transform.rotation = Quaternion.Lerp(
-            model.transform.rotation,
+        transform.rotation = Quaternion.Lerp(
+            transform.rotation,
             targetRotation,
             rotationSpeed * Time.fixedDeltaTime);
 
         rb.velocity = new Vector3(
             targetDirection.x * accelleration * moveSpeed,
             rb.velocity.y,
-            targetDirection.z * accelleration * moveSpeed) * Time.fixedDeltaTime;
+            targetDirection.z * accelleration * moveSpeed);
     }
 
     private void MovementXZ()
     {
-        bool forwardPressed = inputManager.Forward > 0.01f && canMove;
-        bool backwardPressed = inputManager.Forward < -0.01f && canMove;
-        bool leftPressed = inputManager.Horizontal < -0.01f && canMove;
-        bool rightPressed = inputManager.Horizontal > 0.01f && canMove;
-        bool movementPressed = (Mathf.Abs(inputManager.Forward) > 0.01f || Mathf.Abs(inputManager.Horizontal) > 0.01f) && canMove;
+        bool forwardPressed = inputManager.Forward > 0.01f && inputManager.canMove;
+        bool backwardPressed = inputManager.Forward < -0.01f && inputManager.canMove;
+        bool leftPressed = inputManager.Horizontal < -0.01f && inputManager.canMove;
+        bool rightPressed = inputManager.Horizontal > 0.01f && inputManager.canMove;
+        bool movementPressed = (Mathf.Abs(inputManager.Forward) > 0.01f || Mathf.Abs(inputManager.Horizontal) > 0.01f) && inputManager.canMove;
 
         Vector3 forward = playerCamera.transform.forward * inputManager.Forward;
         Vector3 horizontal = playerCamera.transform.right * inputManager.Horizontal;
@@ -140,13 +134,5 @@ public class PlayerMovement : MonoBehaviour
 
         animator.SetFloat("Velocity X", movementX);
         animator.SetFloat("Velocity Z", movementZ);
-    }
-
-
-    public void SetActionMovement(bool canMove, Vector3 direction, float speed)
-    {
-        inputManager.canMove = canMove;
-        targetDirection = direction;
-        currentSpeed = speed;
     }
 }

@@ -57,7 +57,7 @@ public class PlayerInputManager : MonoBehaviour
         }
         
         if (canRoll)
-            rollKey = Input.GetButton("Roll");
+            rollKey = Input.GetButtonDown("Roll");
         else
             rollKey = false;
 

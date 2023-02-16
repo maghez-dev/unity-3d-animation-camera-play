@@ -10,44 +10,57 @@ public class PlayerMovement : MonoBehaviour
     public float rotationSpeed = 5f;
     public float moveSpeed = 5f;
 
-    [Header("Rolling")]
-    public float rollingTimeout = 5f;
+    [Header("Roll")]
+    public float rollDuration = 5f;
     public float rollSpeed = 10f;
 
     private PlayerInputManager inputManager;
-    private CapsuleCollider capsuleCollider;
     private Animator animator;
     private Rigidbody rb;
     
     private Vector3 targetDirection;
     private Quaternion targetRotation;
+    private float currentSpeed = 0f;
     private float accelleration = 0f;
     private float movementX;
     private float movementZ;
+    private bool beginRoll;
 
-    private bool strafe;
-    public bool Strafe
+    private bool strafeActive;
+    public bool StrafeActive
     {
-        set { strafe = value; }
+        set { strafeActive = value; }
     }
 
 
     void Start()
     {
-        capsuleCollider = GetComponent<CapsuleCollider>();
-
         inputManager = GetComponent<PlayerInputManager>();
         animator = GetComponent<Animator>();
         rb = GetComponent<Rigidbody>();
 
         targetRotation = transform.rotation;
         targetDirection = transform.forward;
-        strafe = false;
+        strafeActive = false;
     }
 
     void Update()
     {
-        strafe = playerCamera.FocusActive;
+        strafeActive = playerCamera.FocusActive;
+
+        if (inputManager.canRoll && inputManager.RollKey)
+        {
+            inputManager.isRolling = true;
+            beginRoll = true;
+            StartCoroutine(Roll(rollDuration));
+        }
+        if (inputManager.isRolling)
+        {
+            if (beginRoll && accelleration < 1f)
+                accelleration += Time.deltaTime * 2;
+            if (!beginRoll && accelleration > 0f)
+                accelleration -= Time.deltaTime * 2;
+        }
 
         MovementXZ();
     }
@@ -57,12 +70,12 @@ public class PlayerMovement : MonoBehaviour
         transform.rotation = Quaternion.Lerp(
             transform.rotation,
             targetRotation,
-            rotationSpeed * Time.fixedDeltaTime);
+            rotationSpeed);
 
         rb.velocity = new Vector3(
-            targetDirection.x * accelleration * moveSpeed,
+            targetDirection.x * accelleration * currentSpeed,
             rb.velocity.y,
-            targetDirection.z * accelleration * moveSpeed);
+            targetDirection.z * accelleration * currentSpeed);
     }
 
     private void MovementXZ()
@@ -76,11 +89,11 @@ public class PlayerMovement : MonoBehaviour
         Vector3 forward = playerCamera.transform.forward * inputManager.Forward;
         Vector3 horizontal = playerCamera.transform.right * inputManager.Horizontal;
 
-        if (strafe)
+        if (strafeActive)
         {
             // Strafe movement
 
-            if (movementPressed)
+            if (movementPressed && inputManager.canMove)
             {
                 targetDirection = (forward + horizontal).normalized;
                 targetRotation = Quaternion.Euler(new Vector3(0, playerCamera.transform.rotation.eulerAngles.y, 0));
@@ -108,7 +121,7 @@ public class PlayerMovement : MonoBehaviour
         {
             // Base movement
 
-            if (movementPressed)
+            if (movementPressed && inputManager.canMove)
             {
                 targetDirection = (forward + horizontal).normalized;
                 targetRotation = Quaternion.Euler(new Vector3(0, Quaternion.LookRotation(targetDirection, transform.up).eulerAngles.y, 0));
@@ -130,9 +143,36 @@ public class PlayerMovement : MonoBehaviour
                 movementX = 0f;
         }
 
-        accelleration = (playerCamera.transform.forward * movementX + playerCamera.transform.right * movementZ).magnitude;
+        if (inputManager.canMove) 
+        { 
+            accelleration = (playerCamera.transform.forward * movementX + playerCamera.transform.right * movementZ).magnitude;
+            currentSpeed = moveSpeed;
+        }
 
         animator.SetFloat("Velocity X", movementX);
         animator.SetFloat("Velocity Z", movementZ);
+    }
+    
+    private IEnumerator Roll(float duration)
+    {
+        inputManager.canMove = false;
+        inputManager.canRoll = false;
+        inputManager.isRolling = true;
+
+        targetRotation = Quaternion.Euler(new Vector3(0, Quaternion.LookRotation(targetDirection, transform.up).eulerAngles.y, 0));
+        accelleration = 1f;
+        currentSpeed = rollSpeed;
+
+        animator.SetTrigger("Roll");
+
+        yield return new WaitForSeconds(duration - .3f);
+
+        inputManager.isRolling = false;
+        beginRoll = false;
+
+        yield return new WaitForSeconds(.3f);
+
+        inputManager.canMove = true;
+        inputManager.canRoll = true;
     }
 }

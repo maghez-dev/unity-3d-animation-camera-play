@@ -1587,10 +1587,10 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   playerCamera: {fileID: 963194229}
-  rotationSpeed: 5
+  rotationSpeed: 0.4
   moveSpeed: 5
-  rollingTimeout: 1
-  rollSpeed: 100
+  rollDuration: 1
+  rollSpeed: 7
 --- !u!114 &1516345779
 MonoBehaviour:
   m_ObjectHideFlags: 0

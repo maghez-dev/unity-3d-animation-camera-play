@@ -46,15 +46,16 @@ public class PlayerMovement : MonoBehaviour
 
     void Update()
     {
+        Debug.Log(accelleration);
+
         strafeActive = playerCamera.FocusActive;
 
-        if (inputManager.canRoll && inputManager.RollKey)
+        if (inputManager.rollKey)
         {
-            inputManager.isRolling = true;
             beginRoll = true;
             StartCoroutine(Roll(rollDuration));
         }
-        if (inputManager.isRolling)
+        if (inputManager.currentState.Equals(PlayerInputManager.State.Roll))
         {
             if (beginRoll && accelleration < 1f)
                 accelleration += Time.deltaTime * 2;
@@ -80,20 +81,20 @@ public class PlayerMovement : MonoBehaviour
 
     private void MovementXZ()
     {
-        bool forwardPressed = inputManager.Forward > 0.01f && inputManager.canMove;
-        bool backwardPressed = inputManager.Forward < -0.01f && inputManager.canMove;
-        bool leftPressed = inputManager.Horizontal < -0.01f && inputManager.canMove;
-        bool rightPressed = inputManager.Horizontal > 0.01f && inputManager.canMove;
-        bool movementPressed = (Mathf.Abs(inputManager.Forward) > 0.01f || Mathf.Abs(inputManager.Horizontal) > 0.01f) && inputManager.canMove;
+        bool forwardPressed = inputManager.forward > 0.01f;
+        bool backwardPressed = inputManager.forward < -0.01f;
+        bool leftPressed = inputManager.horizontal < -0.01f;
+        bool rightPressed = inputManager.horizontal > 0.01f;
+        bool movementPressed = (Mathf.Abs(inputManager.forward) > 0.01f || Mathf.Abs(inputManager.horizontal) > 0.01f);
 
-        Vector3 forward = playerCamera.transform.forward * inputManager.Forward;
-        Vector3 horizontal = playerCamera.transform.right * inputManager.Horizontal;
+        Vector3 forward = playerCamera.transform.forward * inputManager.forward;
+        Vector3 horizontal = playerCamera.transform.right * inputManager.horizontal;
 
         if (strafeActive)
         {
             // Strafe movement
 
-            if (movementPressed && inputManager.canMove)
+            if (movementPressed)
             {
                 targetDirection = (forward + horizontal).normalized;
                 targetRotation = Quaternion.Euler(new Vector3(0, playerCamera.transform.rotation.eulerAngles.y, 0));
@@ -121,7 +122,7 @@ public class PlayerMovement : MonoBehaviour
         {
             // Base movement
 
-            if (movementPressed && inputManager.canMove)
+            if (movementPressed)
             {
                 targetDirection = (forward + horizontal).normalized;
                 targetRotation = Quaternion.Euler(new Vector3(0, Quaternion.LookRotation(targetDirection, transform.up).eulerAngles.y, 0));
@@ -143,7 +144,7 @@ public class PlayerMovement : MonoBehaviour
                 movementX = 0f;
         }
 
-        if (inputManager.canMove) 
+        if (inputManager.currentState.Equals(PlayerInputManager.State.Standard)) 
         { 
             accelleration = (playerCamera.transform.forward * movementX + playerCamera.transform.right * movementZ).magnitude;
             currentSpeed = moveSpeed;
@@ -155,24 +156,19 @@ public class PlayerMovement : MonoBehaviour
     
     private IEnumerator Roll(float duration)
     {
-        inputManager.canMove = false;
-        inputManager.canRoll = false;
-        inputManager.isRolling = true;
+        inputManager.currentState = PlayerInputManager.State.Roll;
 
         targetRotation = Quaternion.Euler(new Vector3(0, Quaternion.LookRotation(targetDirection, transform.up).eulerAngles.y, 0));
-        accelleration = 1f;
         currentSpeed = rollSpeed;
 
         animator.SetTrigger("Roll");
 
         yield return new WaitForSeconds(duration - .3f);
 
-        inputManager.isRolling = false;
         beginRoll = false;
 
         yield return new WaitForSeconds(.3f);
 
-        inputManager.canMove = true;
-        inputManager.canRoll = true;
+        inputManager.currentState = PlayerInputManager.State.Standard;
     }
 }

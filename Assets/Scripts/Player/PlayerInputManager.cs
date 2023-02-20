@@ -4,66 +4,44 @@ using UnityEngine;
 
 public class PlayerInputManager : MonoBehaviour
 {
-    private float horizontal;
-    private float forward;
-    private bool rollKey;
-    private bool blockKey;
-    private bool attackPrimaryKey;
-    private bool attackSecondaryKey;
-    private bool aimKey;
+    public float horizontal;
+    public float forward;
+    public bool rollKey;
+    public bool attackKey;
+
+    public State currentState;
 
 
-    public float Horizontal
+    public enum State
     {
-        get { return horizontal; }
-    }
-    public float Forward
-    {
-        get { return forward; }
-    }
-    public bool BlockKey
-    {
-        get { return blockKey; }
-    }
-    public bool AttackKey
-    {
-        get { return attackPrimaryKey; }
-    }
-    public bool AimKey
-    {
-        get { return aimKey; }
-    }
-    public bool RollKey
-    {
-        get { return rollKey; }
+        Stop,           // Player can't do anything, unable to control character
+        Standard,       // Player can move and initiate other actions
+        Roll,           // Player is performing a roll action
+        Attack          // Player is performing an attack action
     }
 
-    public bool canMove = true;
-    public bool canRoll = true;
-    public bool isRolling = false;
-
+    private void Start()
+    {
+        currentState = State.Standard;
+    }
 
     void LateUpdate()
     {
-        if (canMove)
+        // Input check
+
+        if (currentState.Equals(State.Standard))
         {
             horizontal = Input.GetAxis("Horizontal");
             forward = Input.GetAxis("Vertical");
+            rollKey = Input.GetButtonDown("Roll");
+            attackKey = Input.GetButtonDown("Attack");
         }
         else
         {
             horizontal = 0;
             forward = 0;
-        }
-        
-        if (canRoll)
-            rollKey = Input.GetButtonDown("Roll");
-        else
             rollKey = false;
-
-        blockKey = Input.GetButton("Block");
-        attackPrimaryKey = Input.GetButtonDown("Attack");
-        //attackSecondaryKey = Input.GetButton("Attack2");
-        aimKey = Input.GetButton("Aim");
+            attackKey = false;
+        }
     }
 }

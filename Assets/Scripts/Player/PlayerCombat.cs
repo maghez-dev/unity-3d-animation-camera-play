@@ -44,7 +44,7 @@ public class PlayerCombat : MonoBehaviour
         if (weapon == null)
             return;
 
-        if (canAttack && playerInputManager.AttackKey)
+        if (canAttack && playerInputManager.attackKey)
         {
             AttackBegin();
         }
@@ -58,7 +58,7 @@ public class PlayerCombat : MonoBehaviour
 
     public void AttackBegin()
     {
-        playerInputManager.canMove = false;
+        playerInputManager.currentState = PlayerInputManager.State.Attack;
         canAttack = false;
 
         playerAnimator.SetInteger("AttackIdx", attackIdx);
@@ -74,7 +74,7 @@ public class PlayerCombat : MonoBehaviour
     public void AttackEnd()
     {
         attackIdx = 0;
-        playerInputManager.canMove = true;
+        playerInputManager.currentState = PlayerInputManager.State.Standard;
     }
 
 

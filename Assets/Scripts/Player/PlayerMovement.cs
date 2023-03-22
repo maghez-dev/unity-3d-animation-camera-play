@@ -46,13 +46,12 @@ public class PlayerMovement : MonoBehaviour
 
     void Update()
     {
-        Debug.Log(accelleration);
-
         strafeActive = playerCamera.FocusActive;
 
-        if (inputManager.rollKey)
+        if (inputManager.currentState.Equals(PlayerInputManager.State.Standard) && inputManager.rollKey)
         {
             beginRoll = true;
+            animator.SetBool("Roll", true);
             StartCoroutine(Roll(rollDuration));
         }
         if (inputManager.currentState.Equals(PlayerInputManager.State.Roll))
@@ -94,7 +93,7 @@ public class PlayerMovement : MonoBehaviour
         {
             // Strafe movement
 
-            if (movementPressed)
+            if (movementPressed && inputManager.currentState.Equals(PlayerInputManager.State.Standard))
             {
                 targetDirection = (forward + horizontal).normalized;
                 targetRotation = Quaternion.Euler(new Vector3(0, playerCamera.transform.rotation.eulerAngles.y, 0));
@@ -122,7 +121,7 @@ public class PlayerMovement : MonoBehaviour
         {
             // Base movement
 
-            if (movementPressed)
+            if (movementPressed && inputManager.currentState.Equals(PlayerInputManager.State.Standard))
             {
                 targetDirection = (forward + horizontal).normalized;
                 targetRotation = Quaternion.Euler(new Vector3(0, Quaternion.LookRotation(targetDirection, transform.up).eulerAngles.y, 0));
@@ -144,7 +143,7 @@ public class PlayerMovement : MonoBehaviour
                 movementX = 0f;
         }
 
-        if (inputManager.currentState.Equals(PlayerInputManager.State.Standard)) 
+        if (!inputManager.currentState.Equals(PlayerInputManager.State.Roll)) 
         { 
             accelleration = (playerCamera.transform.forward * movementX + playerCamera.transform.right * movementZ).magnitude;
             currentSpeed = moveSpeed;
@@ -166,6 +165,7 @@ public class PlayerMovement : MonoBehaviour
         yield return new WaitForSeconds(duration - .3f);
 
         beginRoll = false;
+        animator.SetBool("Roll", false);
 
         yield return new WaitForSeconds(.3f);
 

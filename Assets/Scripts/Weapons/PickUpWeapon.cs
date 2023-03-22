@@ -6,7 +6,8 @@ using UnityEngine;
 public class PickUpWeapon : MonoBehaviour
 {
     public float rotationSpeed = 5f;
-    public GameObject weaponPrefab;
+    public WeaponType weaponType = WeaponType.SwordAndShield;
+    
 
     void Update()
     {
@@ -19,7 +20,7 @@ public class PickUpWeapon : MonoBehaviour
         if (playerCombat != null)
         {
             playerCombat = other.GetComponent<PlayerCombat>();
-            playerCombat.EquipWeapon(weaponPrefab);
+            playerCombat.EquipWeapon(weaponType);
         }
     }
 }

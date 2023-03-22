@@ -8,6 +8,7 @@ public abstract class Weapon : MonoBehaviour
     public int attackCombo;
 
     public abstract void SetUp(GameObject playerObj);
+
     public int GetLayerIdx()
     {
         return animLayerIdx;

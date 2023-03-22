@@ -8,6 +8,7 @@ public class PlayerInputManager : MonoBehaviour
     public float forward;
     public bool rollKey;
     public bool attackKey;
+    public bool blockKey;
 
     public State currentState;
 
@@ -34,13 +35,22 @@ public class PlayerInputManager : MonoBehaviour
             horizontal = Input.GetAxis("Horizontal");
             forward = Input.GetAxis("Vertical");
             rollKey = Input.GetButtonDown("Roll");
-            attackKey = Input.GetButtonDown("Attack");
+            blockKey = Input.GetButton("Block");
         }
         else
         {
             horizontal = 0;
-            forward = 0;
+            forward = 0; 
             rollKey = false;
+            blockKey = false;
+        }
+
+        if (currentState.Equals(State.Standard) || currentState.Equals(State.Attack))
+        {
+            attackKey = Input.GetButtonDown("Attack");
+        }
+        else
+        {
             attackKey = false;
         }
     }

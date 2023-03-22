@@ -2,10 +2,11 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-public class Sword : Weapon
+public class SwordAndShield : Weapon
 {
     public GameObject player;
     public string layerName = "Sword And Shield";
+    public GameObject sword;
     public Vector3 positionOffset;
     public Vector3 rotationOffset;
 

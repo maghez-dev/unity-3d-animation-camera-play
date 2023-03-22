@@ -7,6 +7,7 @@ public class PlayerCamera : MonoBehaviour
     [Header("Setup")]
     public GameObject cameraTarget;
     public GameObject cameraPosition;
+    public AnimationRigs rigs;
 
     [Header("Standard Behaviour")]
     public float positionLerp = 0.5f;
@@ -55,6 +56,11 @@ public class PlayerCamera : MonoBehaviour
         {
             focusActive = !focusActive;
             LockClosestTarget(cameraTarget.transform, focusRange);
+
+            if (focusActive)
+                rigs.BeginLookTarget(currentTarget.transform.position);
+            else
+                rigs.EndLookTarget();
         }
 
         transform.position = Vector3.Lerp(

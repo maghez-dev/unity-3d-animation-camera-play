@@ -8,18 +8,19 @@ public class PlayerCombat : MonoBehaviour
     [Header("Class Setup")]
     public Transform rightHand;
     public Transform leftHand;
+    public AnimationRigs rigs;
+    public GameObject sword;
+    public GameObject shield;
 
     [Header("Weapon Equipment")]
+    public WeaponType currentWeapon = WeaponType.None;
     public float equipmentSpeed = 2f;
-    public GameObject currentWeaponObj = null;
     public int currentWeaponLayerIdx = 0;
     public float attackDelay = 1f;
     public float attackMoveSpeed = 1f;
 
     private PlayerInputManager playerInputManager;
-    private PlayerMovement playerMovement;
     private Animator playerAnimator;
-    private Weapon weapon;
     private bool canAttack;
     private int attackIdx;
 
@@ -28,26 +29,43 @@ public class PlayerCombat : MonoBehaviour
     {
         playerAnimator = GetComponent<Animator>();
         playerInputManager = GetComponent<PlayerInputManager>();
-        playerMovement = GetComponent<PlayerMovement>();
         canAttack = true;
         attackIdx = 0;
 
-        if (currentWeaponObj != null)
+        if (currentWeapon != WeaponType.None)
         {
-            weapon = currentWeaponObj.GetComponent<Weapon>();
-            StartCoroutine(ActivateLayer(weapon.GetLayerIdx()));
+            EquipWeapon(currentWeapon);
         }
     }
 
     void Update()
     {
-        if (weapon == null)
+        if (currentWeapon == WeaponType.None)
             return;
 
-        if (canAttack && playerInputManager.attackKey)
+        if ((playerInputManager.currentState.Equals(PlayerInputManager.State.Standard) || playerInputManager.currentState.Equals(PlayerInputManager.State.Attack)) &&
+            canAttack && playerInputManager.attackKey)
         {
-            AttackBegin();
+            AttackPerform();
         }
+
+        rigs.ShieldUp(playerInputManager.currentState.Equals(PlayerInputManager.State.Standard) && playerInputManager.blockKey);
+    }
+
+    public void AttackPerform()
+    {
+        playerInputManager.currentState = PlayerInputManager.State.Attack;
+        canAttack = false;
+
+        playerAnimator.SetInteger("AttackIdx", attackIdx);
+        playerAnimator.SetTrigger("Attack");
+
+        // Handling a combo of 3 attacks
+        attackIdx++;
+        if (attackIdx >= 3)
+            attackIdx = 0;
+
+        StartCoroutine(AttackDelay(attackDelay));
     }
 
     private IEnumerator AttackDelay(float time)
@@ -56,21 +74,7 @@ public class PlayerCombat : MonoBehaviour
         canAttack = true;
     }
 
-    public void AttackBegin()
-    {
-        playerInputManager.currentState = PlayerInputManager.State.Attack;
-        canAttack = false;
-
-        playerAnimator.SetInteger("AttackIdx", attackIdx);
-        playerAnimator.SetTrigger("Attack");
-
-        attackIdx++;
-        if (attackIdx >= weapon.attackCombo)
-            attackIdx = 0;
-
-        StartCoroutine(AttackDelay(attackDelay));
-    }
-
+    // Called by animator to reset combo counter
     public void AttackEnd()
     {
         attackIdx = 0;
@@ -78,10 +82,27 @@ public class PlayerCombat : MonoBehaviour
     }
 
 
+    public void EquipWeapon(WeaponType weaponType)
+    {
+        switch (weaponType)
+        {
+            case WeaponType.SwordAndShield:
+                sword.SetActive(true);
+                shield.SetActive(true);
+                currentWeapon = weaponType;
+                StartCoroutine(ActivateLayer(playerAnimator.GetLayerIndex("Sword And Shield")));
+                break;
+            case WeaponType.TwoHandSword: 
+                break;
+            default:
+                break;
+        }
+    }
+
     private IEnumerator ActivateLayer(int layerIdx)
     {
         float weight = 0f;
-        while(playerAnimator.GetLayerWeight(layerIdx) < 1f)
+        while (playerAnimator.GetLayerWeight(layerIdx) < 1f)
         {
             playerAnimator.SetLayerWeight(layerIdx, weight);
             weight += Time.deltaTime * equipmentSpeed;
@@ -102,20 +123,5 @@ public class PlayerCombat : MonoBehaviour
         }
 
         yield return null;
-    }
-
-    public void EquipWeapon(GameObject weaponPrefab)
-    {
-        GameObject weaponObj = Instantiate(weaponPrefab);
-        Weapon weapon = weaponObj.GetComponent<Weapon>();
-        if (weapon != currentWeaponObj)
-        {
-            weapon.SetUp(this.gameObject);
-            StartCoroutine(DectivateLayer(currentWeaponLayerIdx));
-            StartCoroutine(ActivateLayer(weapon.GetLayerIdx()));
-        }
-        Destroy(currentWeaponObj);
-        currentWeaponObj = weaponObj;
-        this.weapon = weapon;
     }
 }
